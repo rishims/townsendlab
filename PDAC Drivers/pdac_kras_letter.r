@@ -296,48 +296,13 @@ pdac_cesa <- cancereffectsizeR::gene_mutation_rates(cesa = pdac_cesa,
 
 cancereffectsizeR::save_cesa(cesa = pdac_cesa, file = "pdac_full_analysis_2023.rds")
 
-# generate graph of top 20 selection intensities -----
+# determine selection intensities of gene variants -----
 pdac_cesa <- ces_variant(cesa = pdac_cesa, run_name = "kras")
 
 # extract selection results from CESAnalysis and take top variants for visualization
-top <- pdac_cesa$selection$kras
-top <- top[order(-selection_intensity)][1:20] # take top 20 by SI
-top <- top[order(selection_intensity)] # will plot lowest to highest (left to right)
+pdac_si_plot <- plot_effects(pdac_cesa$selection$kras, topn = 20, x_title = "cancer effect", y_title = "variant name", color_by = "#df8f44")
 
-top[, display_name := gsub("_", "\n", variant_name)]
-top[, display_levels := factor(display_name, levels = display_name, ordered = T)]
-
-plot_title <- ""
-n.dodge <- 2 
-
-breaks <- unique(as.numeric(round(quantile(top$included_with_variant, probs = c(0, .5, .75, 1)))))
-
-# create and save plot
-pdac_si_plot <- ggplot(top, aes(x = display_levels, y = log10(selection_intensity))) +
-  geom_errorbar(aes(ymin = log10(ci_low_95), ymax = log10(ci_high_95)), width = .2, color = "darkgrey") +
-  geom_point(aes(color = included_with_variant), size = 3) +
-  scale_x_discrete(guide = guide_axis(n.dodge = n.dodge)) +
-  scale_y_log10() +
-  scale_color_viridis_c(
-    name = "variant prevalence", guide = "colorbar", trans = "log10",
-    option = "plasma", breaks = breaks
-  ) +
-  xlab("variant name") +
-  ylab(expression("cancer effect" ~ scriptstyle(~ ~ (log[10])))) +
-  ggtitle(plot_title) +
-  guides(color = guide_colourbar(ticks = FALSE)) +
-  theme_minimal() +
-  theme(
-    text = element_text(family = "Verdana"),
-    axis.title.x = element_text(size = 11),
-    axis.text.x = element_text(size = 8),
-    legend.position = "bottom",
-    legend.title = element_text(size = 10),
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor.x = element_blank()
-  )
-
-ggsave("pdac_si.jpeg", pdac_plot, width = 8, height = 5)
+ggsave("pdac_si.jpeg", pdac_si_plot, width = 8, height = 5)
 
 # perform pairwise epistasis analysis
 
